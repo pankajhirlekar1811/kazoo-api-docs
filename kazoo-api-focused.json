@@ -9,13 +9,21 @@
     {"url": "https://portal.mrfrundles.2600hz.dev:8443", "description": "CCRobotQA1 Server"}
   ],
   "security": [{"ApiKeyAuth": []}],
-  "x-default-auth": {
-    "account_id": "41bca5874805603de571f9b6e4c18bcd",
-    "auth_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImVhODY5NWJjMTk1YTNiMWRhMzQxMGMzZjI1YjZiOGMwIn0.eyJpc3MiOiJrYXpvbyIsImlkZW50aXR5X3NpZyI6IlRZaWxxRDk1bWtEOGIxSHNQZ3prRzdjWHpxLXZ4bDNvdkVDYV9KMDkydEUiLCJvd25lcl9pZCI6ImQ4MTdiNGJhOTg5NzllZTQ0ZDdhOWNjYzYwMDU5ZWUzIiwiYWNjb3VudF9pZCI6IjQxYmNhNTg3NDgwNTYwM2RlNTcxZjliNmU0YzE4YmNkIiwiZXhwIjoxNzY1MzUxODk1LCJtZXRob2QiOiJjYl91c2VyX2F1dGgifQ.WeOqSXpilx5B61fNNTPnSOLVKkS2TxR2bw1a0T2KjpogkUut7nLK2LLP9FrVoy_7vt1Odd7kLZnazjRrOgNZ_wb83w5pfkdtcX5U3mwa1shexHTRJjIad4IMzVTzTThxg2TGtG_jojL1ynDyr5ULgWZATBij1MVeonxihpRy9fje1JkL47ZtxgxoIqHNLwoKHIMrAJ2hQ41U29_sPJyjxZQxfp4hKRvRbOWvmx0NSiHn3eCQL70yZUsG8YlJVoyXaK_T71ZtMauzBeoAK03wNy_IzDw3OfE8DNNl3x1qR8GTJhShE1w_V2PkuCab7HW9PrMdOE1jnYAIYI6amaZdpA"
+  "x-auth-info": {
+    "username": "user1robot@qa.com",
+    "password": "d0ct0rwh0!98",
+    "account_name": "PH_DONT_DELETE1",
+    "auth_endpoint": "PUT /v2/user_auth",
+    "note": "Generate auth token first using PUT /v2/user_auth with credentials in request body"
   },
   "components": {
     "securitySchemes": {
-      "ApiKeyAuth": {"type": "apiKey", "in": "header", "name": "X-Auth-Token"}
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Auth-Token",
+        "description": "Authentication token obtained from PUT /v2/user_auth endpoint. All API calls require X-Auth-Token and Content-Type headers."
+      }
     },
     "schemas": {
       "Account": {
@@ -96,6 +104,65 @@
     }
   },
   "paths": {
+    "/v2/user_auth": {
+      "put": {
+        "summary": "Authenticate user and get auth token",
+        "tags": ["Authentication"],
+        "security": [],
+        "description": "Generate authentication token required for all other API calls. Returns auth_token and account_id.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "required": ["credentials", "account_name"],
+                    "properties": {
+                      "credentials": {"type": "string", "example": "d0ct0rwh0!98"},
+                      "account_name": {"type": "string", "example": "PH_DONT_DELETE1"}
+                    }
+                  }
+                }
+              },
+              "example": {
+                "data": {
+                  "credentials": "d0ct0rwh0!98",
+                  "account_name": "PH_DONT_DELETE1"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Authentication successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "auth_token": {"type": "string", "description": "Use this token in X-Auth-Token header for all API calls"},
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "account_id": {"type": "string"},
+                        "owner_id": {"type": "string"},
+                        "account_name": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {"description": "Authentication failed"}
+        }
+      }
+    },
     "/v2/accounts": {
       "put": {
         "summary": "Create new account",

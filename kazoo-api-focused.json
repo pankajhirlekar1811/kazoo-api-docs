@@ -1,0 +1,617 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "2600Hz Kazoo API - Call Center & Accounts",
+    "description": "Detailed API documentation for Kazoo call center, accounts, Qubicle, and reporting",
+    "version": "2.0.0"
+  },
+  "servers": [
+    {"url": "https://api.2600hz.com", "description": "Production"}
+  ],
+  "security": [{"ApiKeyAuth": []}],
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {"type": "apiKey", "in": "header", "name": "X-Auth-Token"}
+    },
+    "schemas": {
+      "Account": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string", "example": "My Company"},
+          "realm": {"type": "string", "example": "mycompany.sip.2600hz.com"},
+          "timezone": {"type": "string", "example": "America/Los_Angeles"},
+          "language": {"type": "string", "example": "en-us"},
+          "caller_id": {
+            "type": "object",
+            "properties": {
+              "internal": {"type": "object", "properties": {"name": {"type": "string"}, "number": {"type": "string"}}},
+              "external": {"type": "object", "properties": {"name": {"type": "string"}, "number": {"type": "string"}}}
+            }
+          }
+        }
+      },
+      "Queue": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string", "example": "Support Queue"},
+          "strategy": {"type": "string", "enum": ["round_robin", "most_idle", "ring_all"], "example": "round_robin"},
+          "max_wait_time": {"type": "integer", "example": 300},
+          "max_queue_size": {"type": "integer", "example": 50},
+          "ring_simultaneously": {"type": "integer", "example": 2},
+          "caller_exit_key": {"type": "string", "example": "#"},
+          "record_caller": {"type": "boolean", "example": false},
+          "announce_position": {"type": "boolean", "example": true}
+        }
+      },
+      "QubicleQueue": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string", "example": "Sales Queue"},
+          "strategy": {"type": "string", "example": "round_robin"},
+          "max_priority": {"type": "integer", "example": 10},
+          "ring_timeout": {"type": "integer", "example": 20},
+          "wrapup_timeout": {"type": "integer", "example": 30},
+          "agents": {"type": "array", "items": {"type": "string"}},
+          "skills": {"type": "array", "items": {"type": "string"}}
+        }
+      },
+      "Agent": {
+        "type": "object",
+        "properties": {
+          "user_id": {"type": "string"},
+          "status": {"type": "string", "enum": ["logged_in", "logged_out", "ready", "busy", "wrapup"]},
+          "queues": {"type": "array", "items": {"type": "string"}},
+          "skills": {"type": "array", "items": {"type": "string"}},
+          "max_calls": {"type": "integer", "example": 1}
+        }
+      },
+      "CDR": {
+        "type": "object",
+        "properties": {
+          "call_id": {"type": "string"},
+          "caller_id_number": {"type": "string"},
+          "caller_id_name": {"type": "string"},
+          "callee_id_number": {"type": "string"},
+          "duration_seconds": {"type": "integer"},
+          "billing_seconds": {"type": "integer"},
+          "timestamp": {"type": "integer"},
+          "hangup_cause": {"type": "string"}
+        }
+      },
+      "QubicleReport": {
+        "type": "object",
+        "properties": {
+          "queue_id": {"type": "string"},
+          "calls_answered": {"type": "integer"},
+          "calls_abandoned": {"type": "integer"},
+          "avg_wait_time": {"type": "number"},
+          "avg_handle_time": {"type": "number"},
+          "service_level": {"type": "number"}
+        }
+      }
+    }
+  },
+  "paths": {
+    "/v2/accounts": {
+      "put": {
+        "summary": "Create new account",
+        "tags": ["Accounts"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {"$ref": "#/components/schemas/Account"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Account created"}
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}": {
+      "parameters": [{"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}}],
+      "get": {
+        "summary": "Get account details",
+        "tags": ["Accounts"],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {"$ref": "#/components/schemas/Account"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Update account",
+        "tags": ["Accounts"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {"$ref": "#/components/schemas/Account"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Updated"}
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}/queues": {
+      "parameters": [{"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}}],
+      "get": {
+        "summary": "List all queues",
+        "tags": ["Call Center - Queues"],
+        "responses": {
+          "200": {
+            "description": "List of queues",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/Queue"}}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Create new queue",
+        "tags": ["Call Center - Queues"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {"$ref": "#/components/schemas/Queue"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Queue created"}
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}/queues/{QUEUE_ID}": {
+      "parameters": [
+        {"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}},
+        {"name": "QUEUE_ID", "in": "path", "required": true, "schema": {"type": "string"}}
+      ],
+      "get": {
+        "summary": "Get queue details",
+        "tags": ["Call Center - Queues"],
+        "responses": {
+          "200": {
+            "description": "Queue details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {"$ref": "#/components/schemas/Queue"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Update queue",
+        "tags": ["Call Center - Queues"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {"$ref": "#/components/schemas/Queue"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Updated"}
+        }
+      },
+      "delete": {
+        "summary": "Delete queue",
+        "tags": ["Call Center - Queues"],
+        "responses": {
+          "200": {"description": "Deleted"}
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}/queues/{QUEUE_ID}/stats": {
+      "parameters": [
+        {"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}},
+        {"name": "QUEUE_ID", "in": "path", "required": true, "schema": {"type": "string"}}
+      ],
+      "get": {
+        "summary": "Get queue statistics",
+        "tags": ["Call Center - Reports"],
+        "responses": {
+          "200": {
+            "description": "Queue stats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "calls_waiting": {"type": "integer"},
+                        "agents_available": {"type": "integer"},
+                        "agents_busy": {"type": "integer"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}/qubicle_queues": {
+      "parameters": [{"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}}],
+      "get": {
+        "summary": "List Qubicle queues",
+        "tags": ["Qubicle - Queues"],
+        "responses": {
+          "200": {
+            "description": "List of Qubicle queues",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/QubicleQueue"}}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Create Qubicle queue",
+        "tags": ["Qubicle - Queues"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {"$ref": "#/components/schemas/QubicleQueue"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Created"}
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}/qubicle_queues/{QUEUE_ID}": {
+      "parameters": [
+        {"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}},
+        {"name": "QUEUE_ID", "in": "path", "required": true, "schema": {"type": "string"}}
+      ],
+      "get": {
+        "summary": "Get Qubicle queue",
+        "tags": ["Qubicle - Queues"],
+        "responses": {
+          "200": {
+            "description": "Queue details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {"$ref": "#/components/schemas/QubicleQueue"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Qubicle queue",
+        "tags": ["Qubicle - Queues"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {"$ref": "#/components/schemas/QubicleQueue"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Updated"}
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}/qubicle_queues/{QUEUE_ID}/status": {
+      "parameters": [
+        {"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}},
+        {"name": "QUEUE_ID", "in": "path", "required": true, "schema": {"type": "string"}}
+      ],
+      "get": {
+        "summary": "Get Qubicle queue status",
+        "tags": ["Qubicle - Queues"],
+        "responses": {
+          "200": {
+            "description": "Queue status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "calls_in_queue": {"type": "integer"},
+                        "agents_logged_in": {"type": "integer"},
+                        "agents_available": {"type": "integer"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}/qubicle_recipients": {
+      "parameters": [{"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}}],
+      "get": {
+        "summary": "List Qubicle agents/recipients",
+        "tags": ["Qubicle - Agents"],
+        "responses": {
+          "200": {
+            "description": "List of agents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/Agent"}}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}/qubicle_recipients/{RECIPIENT_ID}/status": {
+      "parameters": [
+        {"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}},
+        {"name": "RECIPIENT_ID", "in": "path", "required": true, "schema": {"type": "string"}}
+      ],
+      "get": {
+        "summary": "Get agent status",
+        "tags": ["Qubicle - Agents"],
+        "responses": {
+          "200": {
+            "description": "Agent status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {"$ref": "#/components/schemas/Agent"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Update agent status",
+        "tags": ["Qubicle - Agents"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "status": {"type": "string", "enum": ["ready", "busy", "wrapup", "logged_out"]}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Status updated"}
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}/qubicle_reports": {
+      "parameters": [{"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}}],
+      "post": {
+        "summary": "Generate Qubicle report",
+        "tags": ["Qubicle - Reports"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "start_date": {"type": "string", "format": "date-time"},
+                      "end_date": {"type": "string", "format": "date-time"},
+                      "queue_ids": {"type": "array", "items": {"type": "string"}},
+                      "metrics": {"type": "array", "items": {"type": "string"}}
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Report data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/QubicleReport"}}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}/cdrs": {
+      "parameters": [
+        {"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}},
+        {"name": "created_from", "in": "query", "schema": {"type": "integer"}, "description": "Start timestamp"},
+        {"name": "created_to", "in": "query", "schema": {"type": "integer"}, "description": "End timestamp"},
+        {"name": "page_size", "in": "query", "schema": {"type": "integer", "default": 50}}
+      ],
+      "get": {
+        "summary": "Get call detail records",
+        "tags": ["Reports - CDRs"],
+        "responses": {
+          "200": {
+            "description": "CDR list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/CDR"}}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}/acdc/agents": {
+      "parameters": [{"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}}],
+      "get": {
+        "summary": "List ACDC agents",
+        "tags": ["Call Center - Agents"],
+        "responses": {
+          "200": {
+            "description": "Agent list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/Agent"}}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}/acdc/agents/status": {
+      "parameters": [{"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}}],
+      "get": {
+        "summary": "Get all agent statuses",
+        "tags": ["Call Center - Agents"],
+        "responses": {
+          "200": {
+            "description": "Agent statuses",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {"type": "array", "items": {"$ref": "#/components/schemas/Agent"}}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/accounts/{ACCOUNT_ID}/acdc/stats": {
+      "parameters": [{"name": "ACCOUNT_ID", "in": "path", "required": true, "schema": {"type": "string"}}],
+      "get": {
+        "summary": "Get ACDC statistics",
+        "tags": ["Call Center - Reports"],
+        "responses": {
+          "200": {
+            "description": "ACDC stats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "total_calls": {"type": "integer"},
+                        "answered_calls": {"type": "integer"},
+                        "abandoned_calls": {"type": "integer"},
+                        "avg_wait_time": {"type": "number"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

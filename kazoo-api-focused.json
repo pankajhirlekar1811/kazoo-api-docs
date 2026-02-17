@@ -6,7 +6,7 @@
     "version": "2.0.0"
   },
   "servers": [
-    {"url": "https://portal.mrfrundles.2600hz.dev:8443/v2", "description": "CCRobotQA1 Server"}
+    {"url": "https://portal.mrfrundles.2600hz.dev:8443", "description": "CCRobotQA1 Server"}
   ],
   "security": [{"ApiKeyAuth": []}],
   "x-default-auth": {

@@ -6,9 +6,13 @@
     "version": "2.0.0"
   },
   "servers": [
-    {"url": "https://api.2600hz.com", "description": "Production"}
+    {"url": "https://portal.mrfrundles.2600hz.dev:8443/v2", "description": "CCRobotQA1 Server"}
   ],
   "security": [{"ApiKeyAuth": []}],
+  "x-default-auth": {
+    "account_id": "41bca5874805603de571f9b6e4c18bcd",
+    "auth_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImVhODY5NWJjMTk1YTNiMWRhMzQxMGMzZjI1YjZiOGMwIn0.eyJpc3MiOiJrYXpvbyIsImlkZW50aXR5X3NpZyI6IlRZaWxxRDk1bWtEOGIxSHNQZ3prRzdjWHpxLXZ4bDNvdkVDYV9KMDkydEUiLCJvd25lcl9pZCI6ImQ4MTdiNGJhOTg5NzllZTQ0ZDdhOWNjYzYwMDU5ZWUzIiwiYWNjb3VudF9pZCI6IjQxYmNhNTg3NDgwNTYwM2RlNTcxZjliNmU0YzE4YmNkIiwiZXhwIjoxNzY1MzUxODk1LCJtZXRob2QiOiJjYl91c2VyX2F1dGgifQ.WeOqSXpilx5B61fNNTPnSOLVKkS2TxR2bw1a0T2KjpogkUut7nLK2LLP9FrVoy_7vt1Odd7kLZnazjRrOgNZ_wb83w5pfkdtcX5U3mwa1shexHTRJjIad4IMzVTzTThxg2TGtG_jojL1ynDyr5ULgWZATBij1MVeonxihpRy9fje1JkL47ZtxgxoIqHNLwoKHIMrAJ2hQ41U29_sPJyjxZQxfp4hKRvRbOWvmx0NSiHn3eCQL70yZUsG8YlJVoyXaK_T71ZtMauzBeoAK03wNy_IzDw3OfE8DNNl3x1qR8GTJhShE1w_V2PkuCab7HW9PrMdOE1jnYAIYI6amaZdpA"
+  },
   "components": {
     "securitySchemes": {
       "ApiKeyAuth": {"type": "apiKey", "in": "header", "name": "X-Auth-Token"}
